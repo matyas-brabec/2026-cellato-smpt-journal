@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CUDA Performance Comparison</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 30px;
+            border: 1px solid #ccc;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #2980b9;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        td {
+            padding: 8px;
+            position: relative;
+            border: 1px solid #ddd;
+        }
+        .speedup-positive {
+            color: green;
+            font-weight: bold;
+        }
+        .speedup-negative {
+            color: red;
+        }
+        .tooltip {
+            position: relative;
+            cursor: pointer;
+        }
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 250px;
+            background-color: #555;
+            color: #fff;
+            text-align: left;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -125px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        /* Highlight ranking for best implementations - using more muted colors */
+        .best-impl {
+            background-color: #4d9e6a !important; /* Less vibrant green */
+            color: white !important;
+            font-weight: bold;
+        }
+        .second-best-impl {
+            background-color: #78b490 !important; /* More muted green */
+            color: white !important;
+        }
+        .third-best-impl {
+            background-color: #a3c9b0 !important; /* Even more muted green */
+            color: white !important;
+        }
+        
+        /* Make sure speedup text is still visible on colored backgrounds */
+        .best-impl .speedup-positive,
+        .second-best-impl .speedup-positive,
+        .third-best-impl .speedup-positive {
+            color: white;
+        }
+        
+        /* Modal styles for detailed runs */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-height: 80%;
+            overflow-y: auto;
+        }
+        
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        .detailed-runs-table {
+            width: 100%;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+        }
+        
+        .detailed-runs-table th,
+        .detailed-runs-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        
+        /* Highlight the best result */
+        .detailed-runs-table tbody tr:first-child {
+            background-color: #d4edda;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>CUDA Performance Comparison</h1>
+    
+    <!-- TABLES_PLACEHOLDER -->
+    
+    <!-- DETAILED_RUNS_PLACEHOLDER -->
+    
+    <div id="detailedRunsContainer" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeDetailedRuns()">&times;</span>
+            <h2 id="detailedRunsTitle">Detailed Test Runs</h2>
+            <div id="detailedRunsContent">
+                <!-- Detailed runs content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function showDetailedRuns(automaton, implementation, size) {
+            // Hide all detailed run tables
+            var tables = document.querySelectorAll('.detailed-runs-table');
+            for (var i = 0; i < tables.length; i++) {
+                tables[i].style.display = 'none';
+            }
+            
+            // Find and show the table for this automaton, implementation, and size
+            var targetTable = document.querySelector(`.detailed-runs-table[data-automaton="${automaton}"][data-implementation="${implementation}"][data-size="${size}"]`);
+            if (targetTable) {
+                targetTable.style.display = 'table';
+                
+                // Update the modal title
+                document.getElementById('detailedRunsTitle').innerText = 
+                    `Detailed Test Runs - ${automaton} (${implementation}) - ${Math.sqrt(size)}×${Math.sqrt(size)} Grid`;
+                
+                // Show the modal
+                document.getElementById('detailedRunsContainer').style.display = 'block';
+            }
+        }
+        
+        function closeDetailedRuns() {
+            document.getElementById('detailedRunsContainer').style.display = 'none';
+        }
+        
+        // Close the modal when clicking outside of it
+        window.onclick = function(event) {
+            var modal = document.getElementById('detailedRunsContainer');
+            if (event.target == modal) {
+                closeDetailedRuns();
+            }
+        }
+    </script>
+</body>
+</html>

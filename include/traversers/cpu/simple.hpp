@@ -1,0 +1,102 @@
+#ifndef CELLATO_TRAVERSERS_CPU_SIMPLE_HPP
+#define CELLATO_TRAVERSERS_CPU_SIMPLE_HPP
+
+#include <iostream>
+#include <thread>
+#include <chrono>
+#include <utility>
+#include <functional>
+
+#include "../../memory/interface.hpp"
+#include "../traverser_utils.hpp"
+#include "../../experiments/run_params.hpp"
+
+namespace cellato::traversers::cpu::simple {
+
+using namespace cellato::traversers::utils;
+
+template <
+    typename evaluator_type,
+    typename grid_type >
+class traverser {
+    using evaluator_t = evaluator_type;
+    using grid_t = grid_type;
+
+    using cell_t = typename grid_t::store_type;
+
+  public:
+    static constexpr bool is_CUDA = false;
+
+    void init(grid_t grid, 
+              const cellato::run::run_params& params) {
+        (void)params; // Unused parameter
+
+        _input_grid = std::move(grid);
+        _intermediate_grid = _input_grid;
+        _final_grid = &_intermediate_grid;
+    }
+
+    struct no_callback {};
+
+    template <typename callback = no_callback>
+    void run(int steps, callback&& callback_func = no_callback{}) {
+        
+        auto current = &_input_grid;
+        auto next = &_intermediate_grid;
+
+        auto state = cellato::memory::grids::point_in_grid(current->data());
+
+        state.properties.x_size = _input_grid.x_size_physical();
+        state.properties.y_size = _input_grid.y_size_physical();
+
+        if constexpr (!std::is_same_v<callback, no_callback>) {
+            callback_func(0, _input_grid);
+        }
+
+        if constexpr (!std::is_same_v<callback, no_callback>) {
+            callback_func(0, *current);
+        }
+
+        for (int step = 0; step < steps; ++step) {
+
+            state.grid = current->data();
+            state.time_step = step;
+            
+            auto next_data = next->data();
+
+            // Process cells
+            for (int y = 0; y < state.properties.y_size; ++y) {
+                for (int x = 0; x < state.properties.x_size; ++x) {
+
+                    state.position.x = x;
+                    state.position.y = y;
+
+                    auto result = evaluator_t::evaluate(state);
+                    save_to(next_data, state.idx(), result);
+                }
+            }
+
+            // Call the callback function if provided
+            if constexpr (!std::is_same_v<callback, no_callback>) {
+                callback_func(step + 1, *next);
+            }
+
+            std::swap(current, next);
+        }
+
+        _final_grid = current;
+    }
+
+    grid_t fetch_result() const {
+        return std::move(*_final_grid);
+    }
+
+    private:
+
+    grid_t _input_grid, _intermediate_grid;
+    grid_t* _final_grid;
+};
+
+}
+
+#endif // CELLATO_TRAVERSERS_CPU_SIMPLE_HPP

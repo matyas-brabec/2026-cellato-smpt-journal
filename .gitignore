@@ -1,0 +1,9 @@
+**/*.out
+**/bin
+/bin_*
+**/obj
+**/_deps
+**/venv
+**/_obsolete
+**/__pycache__
+**/__slurm__
